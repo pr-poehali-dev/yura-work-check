@@ -41,6 +41,40 @@ export default function Index() {
     setReminders(reminders.map(r => r.id === id ? {...r, time: newTime} : r));
   };
 
+  const [foodDiary, setFoodDiary] = useState<{id: number, meal: string, food: string, kcal: number, protein: number, carbs: number, fat: number, time: string}[]>([
+    { id: 1, meal: 'Завтрак', food: 'Овсянка с черникой', kcal: 320, protein: 12, carbs: 55, fat: 8, time: '08:15' },
+    { id: 2, meal: 'Перекус', food: 'Яблоко', kcal: 80, protein: 0, carbs: 20, fat: 0, time: '11:00' },
+  ]);
+  const [newFood, setNewFood] = useState({ meal: 'Завтрак', food: '', kcal: '', protein: '', carbs: '', fat: '' });
+  
+  const addFoodEntry = () => {
+    if (newFood.food && newFood.kcal) {
+      const now = new Date();
+      const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      setFoodDiary([...foodDiary, {
+        id: foodDiary.length + 1,
+        meal: newFood.meal,
+        food: newFood.food,
+        kcal: parseFloat(newFood.kcal),
+        protein: parseFloat(newFood.protein) || 0,
+        carbs: parseFloat(newFood.carbs) || 0,
+        fat: parseFloat(newFood.fat) || 0,
+        time
+      }]);
+      setNewFood({ meal: 'Завтрак', food: '', kcal: '', protein: '', carbs: '', fat: '' });
+    }
+  };
+
+  const deleteFoodEntry = (id: number) => {
+    setFoodDiary(foodDiary.filter(entry => entry.id !== id));
+  };
+
+  const totalCalories = foodDiary.reduce((sum, entry) => sum + entry.kcal, 0);
+  const totalProtein = foodDiary.reduce((sum, entry) => sum + entry.protein, 0);
+  const totalCarbs = foodDiary.reduce((sum, entry) => sum + entry.carbs, 0);
+  const totalFat = foodDiary.reduce((sum, entry) => sum + entry.fat, 0);
+  const caloriesLeft = 1400 - totalCalories;
+
   const dailyMealPlan = [
     {
       day: 1,
@@ -415,8 +449,12 @@ export default function Index() {
           )}
         </div>
 
-        <Tabs defaultValue="tracker" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 h-auto gap-2">
+        <Tabs defaultValue="diary" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8 h-auto gap-2">
+            <TabsTrigger value="diary" className="gap-2">
+              <Icon name="BookOpen" size={18} />
+              Дневник
+            </TabsTrigger>
             <TabsTrigger value="tracker" className="gap-2">
               <Icon name="TrendingDown" size={18} />
               Трекер веса
@@ -446,6 +484,185 @@ export default function Index() {
               Советы
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="diary" className="space-y-6">
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="md:col-span-2 animate-fade-in">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="BookOpen" className="text-primary" size={24} />
+                    Дневник питания
+                  </CardTitle>
+                  <CardDescription>Записывай всё, что съела сегодня</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium mb-1 block">Приём пищи</label>
+                      <select 
+                        value={newFood.meal}
+                        onChange={(e) => setNewFood({...newFood, meal: e.target.value})}
+                        className="w-full p-2 border rounded-lg"
+                      >
+                        <option>Завтрак</option>
+                        <option>Перекус 1</option>
+                        <option>Обед</option>
+                        <option>Перекус 2</option>
+                        <option>Ужин</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium mb-1 block">Название блюда</label>
+                      <Input 
+                        placeholder="Например: Салат с курицей"
+                        value={newFood.food}
+                        onChange={(e) => setNewFood({...newFood, food: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Калории</label>
+                      <Input 
+                        type="number"
+                        placeholder="ккал"
+                        value={newFood.kcal}
+                        onChange={(e) => setNewFood({...newFood, kcal: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Белки (г)</label>
+                      <Input 
+                        type="number"
+                        placeholder="г"
+                        value={newFood.protein}
+                        onChange={(e) => setNewFood({...newFood, protein: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Углеводы (г)</label>
+                      <Input 
+                        type="number"
+                        placeholder="г"
+                        value={newFood.carbs}
+                        onChange={(e) => setNewFood({...newFood, carbs: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Жиры (г)</label>
+                      <Input 
+                        type="number"
+                        placeholder="г"
+                        value={newFood.fat}
+                        onChange={(e) => setNewFood({...newFood, fat: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={addFoodEntry} className="w-full gap-2">
+                    <Icon name="Plus" size={18} />
+                    Добавить в дневник
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="PieChart" className="text-primary" size={24} />
+                    Сегодня
+                  </CardTitle>
+                  <CardDescription>Твоя статистика за день</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-center p-6 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg">
+                    <div className="text-4xl font-bold mb-1 bg-gradient-to-r from-fitness-orange to-fitness-purple bg-clip-text text-transparent">
+                      {totalCalories}
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-3">съедено ккал</div>
+                    <div className={`text-lg font-semibold ${caloriesLeft >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {caloriesLeft >= 0 ? `Осталось ${caloriesLeft}` : `Перебор ${Math.abs(caloriesLeft)}`} ккал
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="p-3 bg-card rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Белки</span>
+                        <span className="font-bold text-fitness-orange">{totalProtein.toFixed(1)}г</span>
+                      </div>
+                      <Progress value={(totalProtein / 95) * 100} className="h-2 bg-orange-100" />
+                      <div className="text-xs text-muted-foreground mt-1">Норма: 95г</div>
+                    </div>
+
+                    <div className="p-3 bg-card rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Углеводы</span>
+                        <span className="font-bold text-fitness-purple">{totalCarbs.toFixed(1)}г</span>
+                      </div>
+                      <Progress value={(totalCarbs / 140) * 100} className="h-2 bg-purple-100" />
+                      <div className="text-xs text-muted-foreground mt-1">Норма: 140г</div>
+                    </div>
+
+                    <div className="p-3 bg-card rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Жиры</span>
+                        <span className="font-bold text-fitness-blue">{totalFat.toFixed(1)}г</span>
+                      </div>
+                      <Progress value={(totalFat / 45) * 100} className="h-2 bg-blue-100" />
+                      <div className="text-xs text-muted-foreground mt-1">Норма: 45г</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="List" className="text-primary" size={24} />
+                  История приёмов пищи
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {foodDiary.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Icon name="Utensils" className="mx-auto mb-2 text-muted-foreground/50" size={48} />
+                      <p>Пока нет записей. Добавь свой первый приём пищи!</p>
+                    </div>
+                  ) : (
+                    foodDiary.map((entry) => (
+                      <div key={entry.id} className="flex items-start justify-between p-4 bg-card rounded-lg border hover:border-primary/30 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-xs">{entry.meal}</Badge>
+                            <span className="text-xs text-muted-foreground">{entry.time}</span>
+                          </div>
+                          <h4 className="font-semibold mb-2">{entry.food}</h4>
+                          <div className="flex gap-4 text-sm">
+                            <span className="text-fitness-orange">Б: {entry.protein}г</span>
+                            <span className="text-fitness-purple">У: {entry.carbs}г</span>
+                            <span className="text-fitness-blue">Ж: {entry.fat}г</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-gradient-to-r from-fitness-orange to-fitness-purple text-white">
+                            {entry.kcal} ккал
+                          </Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => deleteFoodEntry(entry.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Icon name="Trash2" size={18} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="tracker" className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
