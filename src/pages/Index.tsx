@@ -11,6 +11,15 @@ export default function Index() {
   const [currentWeight, setCurrentWeight] = useState(61);
   const targetWeight = 55;
   const progressPercent = ((61 - currentWeight) / (61 - targetWeight)) * 100;
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [weightLog, setWeightLog] = useState<{day: number, weight: number, date: string}[]>([
+    { day: 1, weight: 61, date: '2025-10-20' },
+    { day: 2, weight: 60.8, date: '2025-10-21' },
+    { day: 3, weight: 60.5, date: '2025-10-22' },
+    { day: 4, weight: 60.3, date: '2025-10-23' },
+    { day: 5, weight: 60.0, date: '2025-10-24' },
+  ]);
+  const [newWeight, setNewWeight] = useState('');
 
   const dailyMealPlan = [
     {
@@ -136,6 +145,61 @@ export default function Index() {
     }
   ];
 
+  const faceExercises = [
+    {
+      name: 'Подтяжка овала лица',
+      duration: '5 мин',
+      reps: '15-20 раз',
+      description: 'Открой рот в форме буквы "О", затем улыбнись широко. Повторяй движение, чувствуя работу мышц щёк и подбородка.',
+      benefit: 'Укрепляет мышцы щёк, подтягивает овал'
+    },
+    {
+      name: 'Упражнение для скул',
+      duration: '3 мин',
+      reps: '20 раз',
+      description: 'Надуй щёки воздухом и перекатывай его из одной стороны в другую. Задержи на 5 секунд в каждой позиции.',
+      benefit: 'Тонизирует мышцы щёк, делает скулы выразительнее'
+    },
+    {
+      name: 'Лифтинг подбородка',
+      duration: '4 мин',
+      reps: '10-15 раз',
+      description: 'Запрокинь голову назад, смотри в потолок. Выдвинь нижнюю челюсть вперёд, почувствуй натяжение в области шеи и подбородка.',
+      benefit: 'Убирает второй подбородок, подтягивает шею'
+    },
+    {
+      name: 'Массаж лимфодренажный',
+      duration: '5 мин',
+      reps: '10 движений',
+      description: 'Массируй лицо от центра к периферии лёгкими движениями. От носа к вискам, от подбородка к ушам.',
+      benefit: 'Снимает отёчность, улучшает цвет лица'
+    },
+    {
+      name: 'Упражнение "Рыбка"',
+      duration: '3 мин',
+      reps: '15 раз',
+      description: 'Втяни щёки внутрь, как рыбка, и попробуй улыбнуться в этом положении. Задержи на 5 секунд.',
+      benefit: 'Укрепляет мышцы щёк, создаёт чёткий контур'
+    },
+    {
+      name: 'Подтяжка лба',
+      duration: '3 мин',
+      reps: '12 раз',
+      description: 'Приложи пальцы ко лбу, тяни кожу вверх, одновременно пытаясь нахмуриться. Создавай сопротивление.',
+      benefit: 'Разглаживает морщины на лбу, подтягивает верхнюю часть лица'
+    }
+  ];
+
+  const addWeightEntry = () => {
+    if (newWeight && parseFloat(newWeight) > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      const nextDay = weightLog.length + 1;
+      setWeightLog([...weightLog, { day: nextDay, weight: parseFloat(newWeight), date: today }]);
+      setCurrentWeight(parseFloat(newWeight));
+      setNewWeight('');
+    }
+  };
+
   const tips = [
     { icon: 'Droplets', text: 'Пить 2-2.5 литра воды в день' },
     { icon: 'Moon', text: 'Спать 7-8 часов для восстановления' },
@@ -190,8 +254,12 @@ export default function Index() {
           </Card>
         </div>
 
-        <Tabs defaultValue="plan" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto gap-2">
+        <Tabs defaultValue="tracker" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 h-auto gap-2">
+            <TabsTrigger value="tracker" className="gap-2">
+              <Icon name="TrendingDown" size={18} />
+              Трекер веса
+            </TabsTrigger>
             <TabsTrigger value="plan" className="gap-2">
               <Icon name="Calendar" size={18} />
               План питания
@@ -208,11 +276,136 @@ export default function Index() {
               <Icon name="Dumbbell" size={18} />
               Тренировки
             </TabsTrigger>
+            <TabsTrigger value="face" className="gap-2">
+              <Icon name="Smile" size={18} />
+              Лицо
+            </TabsTrigger>
             <TabsTrigger value="tips" className="gap-2">
               <Icon name="Lightbulb" size={18} />
               Советы
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="tracker" className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="Scale" className="text-primary" size={24} />
+                    Добавить замер веса
+                  </CardTitle>
+                  <CardDescription>Записывай свой вес каждый день для отслеживания прогресса</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <Input 
+                        type="number" 
+                        placeholder="Введи вес (кг)" 
+                        value={newWeight}
+                        onChange={(e) => setNewWeight(e.target.value)}
+                        className="text-lg"
+                        step="0.1"
+                      />
+                    </div>
+                    <Button onClick={addWeightEntry} className="gap-2">
+                      <Icon name="Plus" size={18} />
+                      Добавить
+                    </Button>
+                  </div>
+                  <div className="relative h-64 rounded-lg overflow-hidden">
+                    <img 
+                      src="https://cdn.poehali.dev/projects/c6a98cb2-0901-44eb-aac1-9c5339bc2279/files/07627325-3f5f-4765-b433-6059f99e8f46.jpg"
+                      alt="Прогресс похудения"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="LineChart" className="text-primary" size={24} />
+                    Статистика похудения
+                  </CardTitle>
+                  <CardDescription>Твой прогресс за последние дни</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="text-center p-4 bg-gradient-to-br from-fitness-orange/20 to-fitness-orange/10 rounded-lg">
+                      <div className="text-2xl font-bold text-fitness-orange">{weightLog.length}</div>
+                      <div className="text-xs text-muted-foreground">Дней</div>
+                    </div>
+                    <div className="text-center p-4 bg-gradient-to-br from-fitness-purple/20 to-fitness-purple/10 rounded-lg">
+                      <div className="text-2xl font-bold text-fitness-purple">
+                        {(weightLog[0].weight - weightLog[weightLog.length - 1].weight).toFixed(1)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">Сброшено кг</div>
+                    </div>
+                    <div className="text-center p-4 bg-gradient-to-br from-fitness-blue/20 to-fitness-blue/10 rounded-lg">
+                      <div className="text-2xl font-bold text-fitness-blue">
+                        {((weightLog[0].weight - weightLog[weightLog.length - 1].weight) / weightLog.length * 30).toFixed(1)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">Прогноз/мес</div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {weightLog.slice().reverse().map((entry, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-card rounded-lg border hover:border-primary/30 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <span className="font-bold text-primary">{entry.day}</span>
+                          </div>
+                          <div>
+                            <div className="font-semibold">{entry.weight} кг</div>
+                            <div className="text-xs text-muted-foreground">{entry.date}</div>
+                          </div>
+                        </div>
+                        {idx < weightLog.length - 1 && (
+                          <Badge className={weightLog[weightLog.length - 1 - idx].weight - weightLog[weightLog.length - 2 - idx].weight < 0 ? 'bg-green-500' : 'bg-red-500'}>
+                            {(weightLog[weightLog.length - 1 - idx].weight - weightLog[weightLog.length - 2 - idx].weight).toFixed(1)} кг
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-gradient-to-br from-primary/5 to-secondary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <Icon name="TrendingDown" className="text-primary shrink-0 mt-1" size={28} />
+                  <div>
+                    <h4 className="font-bold text-lg mb-2">График твоего прогресса</h4>
+                    <div className="h-48 bg-white/50 rounded-lg p-4 border border-primary/20">
+                      <div className="h-full flex items-end justify-around gap-2">
+                        {weightLog.map((entry, idx) => {
+                          const height = ((62 - entry.weight) / (62 - 54)) * 100;
+                          return (
+                            <div key={idx} className="flex-1 flex flex-col items-center gap-2">
+                              <div className="text-xs font-semibold text-primary">{entry.weight}</div>
+                              <div 
+                                className="w-full bg-gradient-to-t from-fitness-orange via-fitness-purple to-fitness-blue rounded-t-lg transition-all hover:opacity-80"
+                                style={{ height: `${height}%` }}
+                              />
+                              <div className="text-xs text-muted-foreground">Д{entry.day}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-4">
+                      Цель: снижение веса до 55 кг. Текущий темп: отличный! Продолжай в том же духе 💪
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="plan" className="space-y-6">
             <div className="mb-6 p-4 bg-gradient-to-r from-fitness-orange/10 to-fitness-purple/10 rounded-lg border border-primary/20">
@@ -410,6 +603,21 @@ export default function Index() {
           </TabsContent>
 
           <TabsContent value="recipes" className="space-y-6">
+            <Card className="animate-fade-in overflow-hidden border-0">
+              <div className="relative h-48">
+                <img 
+                  src="https://cdn.poehali.dev/projects/c6a98cb2-0901-44eb-aac1-9c5339bc2279/files/131cdda3-cfba-46f1-9618-b365d165e53a.jpg"
+                  alt="Здоровое питание"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                  <h2 className="text-2xl font-heading font-bold text-white">
+                    🍽️ Вкусные рецепты для твоей цели
+                  </h2>
+                </div>
+              </div>
+            </Card>
+
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recipes.map((recipe, idx) => (
                 <Card key={idx} className="animate-scale-in hover:shadow-lg transition-all hover:-translate-y-1">
@@ -488,6 +696,105 @@ export default function Index() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="face" className="space-y-6">
+            <Card className="animate-fade-in overflow-hidden">
+              <div className="relative h-64 md:h-80">
+                <img 
+                  src="https://cdn.poehali.dev/projects/c6a98cb2-0901-44eb-aac1-9c5339bc2279/files/47df382d-2b9b-4224-a95d-1bf6806f698c.jpg"
+                  alt="Упражнения для лица"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                  <div>
+                    <h2 className="text-3xl font-heading font-bold text-white mb-2">
+                      Упражнения для овала лица
+                    </h2>
+                    <p className="text-white/90">
+                      Подтяни кожу, убери второй подбородок и сделай скулы выразительнее
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {faceExercises.map((exercise, idx) => (
+                <Card key={idx} className="animate-scale-in hover:shadow-xl transition-all">
+                  <CardHeader className="bg-gradient-to-br from-fitness-purple/10 to-fitness-blue/10">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                        {idx + 1}
+                      </div>
+                      {exercise.name}
+                    </CardTitle>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant="secondary" className="gap-1">
+                        <Icon name="Clock" size={14} />
+                        {exercise.duration}
+                      </Badge>
+                      <Badge variant="outline">
+                        {exercise.reps}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-6 space-y-4">
+                    <div>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                        <Icon name="Info" className="text-primary" size={18} />
+                        Как делать:
+                      </h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {exercise.description}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-gradient-to-r from-green-50 to-green-100/50 rounded-lg border border-green-200/50">
+                      <h4 className="font-semibold mb-1 flex items-center gap-2 text-green-700">
+                        <Icon name="Sparkles" size={16} />
+                        Эффект:
+                      </h4>
+                      <p className="text-sm text-green-700">
+                        {exercise.benefit}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="bg-gradient-to-br from-fitness-orange/10 via-fitness-purple/10 to-fitness-blue/10 border-2 border-primary/20">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <Icon name="Heart" className="text-primary shrink-0 mt-1" size={28} />
+                  <div>
+                    <h4 className="font-bold text-lg mb-3">Советы для максимального эффекта</h4>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <Icon name="Check" className="text-primary shrink-0 mt-0.5" size={16} />
+                        <span>Выполняй упражнения 2 раза в день: утром и вечером</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Icon name="Check" className="text-primary shrink-0 mt-0.5" size={16} />
+                        <span>Перед упражнениями очисти лицо и нанеси лёгкий крем</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Icon name="Check" className="text-primary shrink-0 mt-0.5" size={16} />
+                        <span>Первые результаты заметны через 2-3 недели регулярных занятий</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Icon name="Check" className="text-primary shrink-0 mt-0.5" size={16} />
+                        <span>Комбинируй с массажем лица для усиления эффекта</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Icon name="Check" className="text-primary shrink-0 mt-0.5" size={16} />
+                        <span>Пей достаточно воды — это важно для упругости кожи</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="tips" className="space-y-6">
