@@ -20,6 +20,26 @@ export default function Index() {
     { day: 5, weight: 60.0, date: '2025-10-24' },
   ]);
   const [newWeight, setNewWeight] = useState('');
+  const [reminders, setReminders] = useState<{id: number, type: string, time: string, label: string, enabled: boolean}[]>([
+    { id: 1, type: 'meal', time: '08:00', label: 'Завтрак', enabled: true },
+    { id: 2, type: 'meal', time: '10:30', label: 'Перекус 1', enabled: true },
+    { id: 3, type: 'meal', time: '13:00', label: 'Обед', enabled: true },
+    { id: 4, type: 'meal', time: '16:00', label: 'Перекус 2', enabled: true },
+    { id: 5, type: 'meal', time: '19:00', label: 'Ужин', enabled: true },
+    { id: 6, type: 'workout', time: '07:00', label: 'Утренняя тренировка', enabled: false },
+    { id: 7, type: 'workout', time: '18:00', label: 'Вечерняя тренировка', enabled: true },
+    { id: 8, type: 'face', time: '09:00', label: 'Упражнения для лица (утро)', enabled: true },
+    { id: 9, type: 'face', time: '21:00', label: 'Упражнения для лица (вечер)', enabled: true },
+  ]);
+  const [showReminderSettings, setShowReminderSettings] = useState(false);
+
+  const toggleReminder = (id: number) => {
+    setReminders(reminders.map(r => r.id === id ? {...r, enabled: !r.enabled} : r));
+  };
+
+  const updateReminderTime = (id: number, newTime: string) => {
+    setReminders(reminders.map(r => r.id === id ? {...r, time: newTime} : r));
+  };
 
   const dailyMealPlan = [
     {
@@ -222,11 +242,24 @@ export default function Index() {
         <div className="grid gap-6 mb-8 animate-scale-in">
           <Card className="border-2 border-primary/20 shadow-xl hover:shadow-2xl transition-shadow">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Icon name="Target" className="text-primary" size={28} />
-                Твоя цель: 61 кг → 55 кг
-              </CardTitle>
-              <CardDescription>Осталось сбросить: {(currentWeight - targetWeight).toFixed(1)} кг</CardDescription>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Icon name="Target" className="text-primary" size={28} />
+                    Твоя цель: 61 кг → 55 кг
+                  </CardTitle>
+                  <CardDescription>Осталось сбросить: {(currentWeight - targetWeight).toFixed(1)} кг</CardDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowReminderSettings(!showReminderSettings)}
+                  className="gap-2"
+                >
+                  <Icon name="Bell" size={18} />
+                  Напоминания
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -252,6 +285,134 @@ export default function Index() {
               </div>
             </CardContent>
           </Card>
+
+          {showReminderSettings && (
+            <Card className="border-2 border-primary/20 animate-fade-in">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Bell" className="text-primary" size={24} />
+                  Настройка напоминаний
+                </CardTitle>
+                <CardDescription>Включи уведомления для приёмов пищи и тренировок</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <Icon name="Utensils" className="text-fitness-orange" size={20} />
+                      Приёмы пищи
+                    </h4>
+                    <div className="space-y-3">
+                      {reminders.filter(r => r.type === 'meal').map((reminder) => (
+                        <div key={reminder.id} className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={reminder.enabled}
+                              onChange={() => toggleReminder(reminder.id)}
+                              className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            />
+                            <span className="font-medium">{reminder.label}</span>
+                          </div>
+                          <Input
+                            type="time"
+                            value={reminder.time}
+                            onChange={(e) => updateReminderTime(reminder.id, e.target.value)}
+                            className="w-32"
+                            disabled={!reminder.enabled}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <Icon name="Dumbbell" className="text-fitness-purple" size={20} />
+                      Тренировки
+                    </h4>
+                    <div className="space-y-3">
+                      {reminders.filter(r => r.type === 'workout').map((reminder) => (
+                        <div key={reminder.id} className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={reminder.enabled}
+                              onChange={() => toggleReminder(reminder.id)}
+                              className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            />
+                            <span className="font-medium">{reminder.label}</span>
+                          </div>
+                          <Input
+                            type="time"
+                            value={reminder.time}
+                            onChange={(e) => updateReminderTime(reminder.id, e.target.value)}
+                            className="w-32"
+                            disabled={!reminder.enabled}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <Icon name="Smile" className="text-fitness-blue" size={20} />
+                      Упражнения для лица
+                    </h4>
+                    <div className="space-y-3">
+                      {reminders.filter(r => r.type === 'face').map((reminder) => (
+                        <div key={reminder.id} className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={reminder.enabled}
+                              onChange={() => toggleReminder(reminder.id)}
+                              className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            />
+                            <span className="font-medium">{reminder.label}</span>
+                          </div>
+                          <Input
+                            type="time"
+                            value={reminder.time}
+                            onChange={(e) => updateReminderTime(reminder.id, e.target.value)}
+                            className="w-32"
+                            disabled={!reminder.enabled}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg border border-primary/20">
+                    <div className="flex items-start gap-3">
+                      <Icon name="Info" className="text-primary shrink-0 mt-0.5" size={20} />
+                      <div className="text-sm">
+                        <p className="font-medium mb-1">Как работают напоминания?</p>
+                        <p className="text-muted-foreground">
+                          Браузер отправит тебе уведомление в указанное время. Разреши уведомления в настройках браузера, чтобы не пропустить важные моменты!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button className="flex-1 gap-2" onClick={() => {
+                      if ('Notification' in window && Notification.permission !== 'granted') {
+                        Notification.requestPermission();
+                      }
+                    }}>
+                      <Icon name="BellRing" size={18} />
+                      Включить уведомления
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={() => setShowReminderSettings(false)}>
+                      Закрыть
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <Tabs defaultValue="tracker" className="space-y-6">
