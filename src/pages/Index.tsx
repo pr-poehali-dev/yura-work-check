@@ -41,25 +41,31 @@ export default function Index() {
     setReminders(reminders.map(r => r.id === id ? {...r, time: newTime} : r));
   };
 
-  const [foodDiary, setFoodDiary] = useState<{id: number, meal: string, food: string, kcal: number, protein: number, carbs: number, fat: number, time: string}[]>([
-    { id: 1, meal: 'Завтрак', food: 'Овсянка с черникой', kcal: 320, protein: 12, carbs: 55, fat: 8, time: '08:15' },
-    { id: 2, meal: 'Перекус', food: 'Яблоко', kcal: 80, protein: 0, carbs: 20, fat: 0, time: '11:00' },
+  const [foodDiary, setFoodDiary] = useState<{id: number, meal: string, food: string, kcal: number, protein: number, carbs: number, fat: number, time: string, date: string}[]>([
+    { id: 1, meal: 'Завтрак', food: 'Овсянка с черникой', kcal: 320, protein: 12, carbs: 55, fat: 8, time: '08:15', date: new Date().toISOString().split('T')[0] },
+    { id: 2, meal: 'Перекус', food: 'Яблоко', kcal: 80, protein: 0, carbs: 20, fat: 0, time: '11:00', date: new Date().toISOString().split('T')[0] },
+    { id: 3, meal: 'Обед', food: 'Куриная грудка с овощами', kcal: 380, protein: 45, carbs: 30, fat: 12, time: '14:20', date: new Date(Date.now() - 86400000).toISOString().split('T')[0] },
+    { id: 4, meal: 'Завтрак', food: 'Творог с медом', kcal: 250, protein: 28, carbs: 25, fat: 6, time: '09:00', date: new Date(Date.now() - 86400000).toISOString().split('T')[0] },
+    { id: 5, meal: 'Ужин', food: 'Запеченная рыба', kcal: 300, protein: 35, carbs: 15, fat: 10, time: '19:30', date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0] },
   ]);
   const [newFood, setNewFood] = useState({ meal: 'Завтрак', food: '', kcal: '', protein: '', carbs: '', fat: '' });
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
   
   const addFoodEntry = () => {
     if (newFood.food && newFood.kcal) {
       const now = new Date();
       const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
       setFoodDiary([...foodDiary, {
-        id: foodDiary.length + 1,
+        id: Date.now(),
         meal: newFood.meal,
         food: newFood.food,
         kcal: parseFloat(newFood.kcal),
         protein: parseFloat(newFood.protein) || 0,
         carbs: parseFloat(newFood.carbs) || 0,
         fat: parseFloat(newFood.fat) || 0,
-        time
+        time,
+        date: selectedDate
       }]);
       setNewFood({ meal: 'Завтрак', food: '', kcal: '', protein: '', carbs: '', fat: '' });
     }
@@ -69,11 +75,60 @@ export default function Index() {
     setFoodDiary(foodDiary.filter(entry => entry.id !== id));
   };
 
-  const totalCalories = foodDiary.reduce((sum, entry) => sum + entry.kcal, 0);
-  const totalProtein = foodDiary.reduce((sum, entry) => sum + entry.protein, 0);
-  const totalCarbs = foodDiary.reduce((sum, entry) => sum + entry.carbs, 0);
-  const totalFat = foodDiary.reduce((sum, entry) => sum + entry.fat, 0);
+  const todayEntries = foodDiary.filter(entry => entry.date === selectedDate);
+  const totalCalories = todayEntries.reduce((sum, entry) => sum + entry.kcal, 0);
+  const totalProtein = todayEntries.reduce((sum, entry) => sum + entry.protein, 0);
+  const totalCarbs = todayEntries.reduce((sum, entry) => sum + entry.carbs, 0);
+  const totalFat = todayEntries.reduce((sum, entry) => sum + entry.fat, 0);
   const caloriesLeft = 1400 - totalCalories;
+
+  const getWeekData = () => {
+    const today = new Date(selectedDate);
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(weekStart);
+      day.setDate(weekStart.getDate() + i);
+      return day.toISOString().split('T')[0];
+    });
+
+    return weekDays.map(date => {
+      const dayEntries = foodDiary.filter(entry => entry.date === date);
+      return {
+        date,
+        dayName: new Date(date).toLocaleDateString('ru-RU', { weekday: 'short' }),
+        dayNum: new Date(date).getDate(),
+        kcal: dayEntries.reduce((sum, entry) => sum + entry.kcal, 0),
+        protein: dayEntries.reduce((sum, entry) => sum + entry.protein, 0),
+        carbs: dayEntries.reduce((sum, entry) => sum + entry.carbs, 0),
+        fat: dayEntries.reduce((sum, entry) => sum + entry.fat, 0),
+      };
+    });
+  };
+
+  const getMonthData = () => {
+    const today = new Date(selectedDate);
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const date = new Date(year, month, i + 1).toISOString().split('T')[0];
+      const dayEntries = foodDiary.filter(entry => entry.date === date);
+      return {
+        date,
+        day: i + 1,
+        kcal: dayEntries.reduce((sum, entry) => sum + entry.kcal, 0),
+        protein: dayEntries.reduce((sum, entry) => sum + entry.protein, 0),
+      };
+    });
+  };
+
+  const weekData = getWeekData();
+  const monthData = getMonthData();
+  const weekAvgCalories = Math.round(weekData.reduce((sum, day) => sum + day.kcal, 0) / 7);
+  const monthAvgCalories = Math.round(monthData.reduce((sum, day) => sum + day.kcal, 0) / monthData.length);
 
   const dailyMealPlan = [
     {
@@ -486,6 +541,173 @@ export default function Index() {
           </TabsList>
 
           <TabsContent value="diary" className="space-y-6">
+            <Card className="animate-fade-in">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const date = new Date(selectedDate);
+                        date.setDate(date.getDate() - 1);
+                        setSelectedDate(date.toISOString().split('T')[0]);
+                      }}
+                    >
+                      <Icon name="ChevronLeft" size={18} />
+                    </Button>
+                    <Input 
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-40"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const date = new Date(selectedDate);
+                        date.setDate(date.getDate() + 1);
+                        setSelectedDate(date.toISOString().split('T')[0]);
+                      }}
+                    >
+                      <Icon name="ChevronRight" size={18} />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                    >
+                      Сегодня
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={viewMode === 'day' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('day')}
+                    >
+                      День
+                    </Button>
+                    <Button
+                      variant={viewMode === 'week' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('week')}
+                    >
+                      Неделя
+                    </Button>
+                    <Button
+                      variant={viewMode === 'month' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('month')}
+                    >
+                      Месяц
+                    </Button>
+                  </div>
+                </div>
+
+                {viewMode === 'week' && (
+                  <div className="grid grid-cols-7 gap-3 mb-6">
+                    {weekData.map((day, idx) => (
+                      <div 
+                        key={idx}
+                        className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${
+                          day.date === selectedDate 
+                            ? 'bg-gradient-to-br from-primary to-secondary text-white border-primary' 
+                            : 'hover:border-primary/50'
+                        }`}
+                        onClick={() => setSelectedDate(day.date)}
+                      >
+                        <div className="text-xs font-medium mb-1">{day.dayName}</div>
+                        <div className="text-lg font-bold mb-1">{day.dayNum}</div>
+                        <div className={`text-xs ${day.date === selectedDate ? 'text-white/90' : 'text-muted-foreground'}`}>
+                          {day.kcal > 0 ? `${day.kcal} ккал` : '—'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {viewMode === 'month' && (
+                  <div className="mb-6">
+                    <div className="grid grid-cols-7 gap-2 mb-2">
+                      {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => (
+                        <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-2">
+                      {monthData.map((day, idx) => {
+                        const dayOfWeek = new Date(day.date).getDay();
+                        const offset = idx === 0 ? (dayOfWeek === 0 ? 6 : dayOfWeek - 1) : 0;
+                        
+                        return (
+                          <React.Fragment key={idx}>
+                            {idx === 0 && Array.from({ length: offset }).map((_, i) => (
+                              <div key={`empty-${i}`} />
+                            ))}
+                            <div
+                              className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${
+                                day.date === selectedDate
+                                  ? 'bg-gradient-to-br from-primary to-secondary text-white border-primary'
+                                  : day.kcal > 0
+                                  ? 'bg-green-50 border-green-200 hover:border-green-400'
+                                  : 'hover:border-primary/50'
+                              }`}
+                              onClick={() => setSelectedDate(day.date)}
+                            >
+                              <div className="font-bold text-sm mb-1">{day.day}</div>
+                              <div className={`text-xs ${day.date === selectedDate ? 'text-white/90' : 'text-muted-foreground'}`}>
+                                {day.kcal > 0 ? `${day.kcal}` : '—'}
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 text-center text-sm text-muted-foreground">
+                      Средняя калорийность: <span className="font-bold text-foreground">{monthAvgCalories} ккал/день</span>
+                    </div>
+                  </div>
+                )}
+
+                {viewMode === 'week' && (
+                  <div className="mb-6 p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg">
+                    <h3 className="font-semibold mb-3">Статистика за неделю</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <div className="text-sm text-muted-foreground mb-1">Среднее</div>
+                        <div className="text-2xl font-bold">{weekAvgCalories}</div>
+                        <div className="text-xs text-muted-foreground">ккал/день</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground mb-1">Белки</div>
+                        <div className="text-2xl font-bold text-fitness-orange">
+                          {Math.round(weekData.reduce((s, d) => s + d.protein, 0) / 7)}г
+                        </div>
+                        <div className="text-xs text-muted-foreground">в среднем</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground mb-1">Углеводы</div>
+                        <div className="text-2xl font-bold text-fitness-purple">
+                          {Math.round(weekData.reduce((s, d) => s + d.carbs, 0) / 7)}г
+                        </div>
+                        <div className="text-xs text-muted-foreground">в среднем</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground mb-1">Жиры</div>
+                        <div className="text-2xl font-bold text-fitness-blue">
+                          {Math.round(weekData.reduce((s, d) => s + d.fat, 0) / 7)}г
+                        </div>
+                        <div className="text-xs text-muted-foreground">в среднем</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="md:col-span-2 animate-fade-in">
                 <CardHeader>
@@ -493,7 +715,11 @@ export default function Index() {
                     <Icon name="BookOpen" className="text-primary" size={24} />
                     Дневник питания
                   </CardTitle>
-                  <CardDescription>Записывай всё, что съела сегодня</CardDescription>
+                  <CardDescription>
+                    {selectedDate === new Date().toISOString().split('T')[0] 
+                      ? 'Записывай всё, что съела сегодня' 
+                      : `Дневник на ${new Date(selectedDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -567,9 +793,13 @@ export default function Index() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Icon name="PieChart" className="text-primary" size={24} />
-                    Сегодня
+                    {selectedDate === new Date().toISOString().split('T')[0] ? 'Сегодня' : 'Статистика'}
                   </CardTitle>
-                  <CardDescription>Твоя статистика за день</CardDescription>
+                  <CardDescription>
+                    {selectedDate === new Date().toISOString().split('T')[0] 
+                      ? 'Твоя статистика за день' 
+                      : new Date(selectedDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center p-6 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg">
@@ -623,13 +853,13 @@ export default function Index() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {foodDiary.length === 0 ? (
+                  {todayEntries.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Icon name="Utensils" className="mx-auto mb-2 text-muted-foreground/50" size={48} />
-                      <p>Пока нет записей. Добавь свой первый приём пищи!</p>
+                      <p>Нет записей за этот день. Добавь приём пищи!</p>
                     </div>
                   ) : (
-                    foodDiary.map((entry) => (
+                    todayEntries.map((entry) => (
                       <div key={entry.id} className="flex items-start justify-between p-4 bg-card rounded-lg border hover:border-primary/30 transition-colors">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
